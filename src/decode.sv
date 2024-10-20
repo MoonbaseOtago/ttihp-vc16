@@ -136,13 +136,14 @@ module decode(input clk, input reset,
 							c_imm = {{(RV-5){1'b0}},         ins[11:10],ins[6], ins[12], ins[5]};
 						end
 					end
-			3'b100:	begin	// jal   x(li)
+			3'b100:	begin	// jalr   x(li)
 						c_br = 1;
 						c_cond = 3'b1x1;
 						c_op = `OP_ADD;
-						c_imm = {{(RV-11){ins[12]}}, ins[8], ins[10:9], ins[6],ins[7],ins[2],ins[11],ins[5:3],1'b0};			
+						c_imm = {{(RV-7){ins[4]}}, ins[3:2],  ins[12:10], ins[6], 1'b0};
 						c_rd = 1;
 						c_rs1 = 1;
+						c_trap = (|ins[9:7])|ins[5];
 					end
 			3'b110: begin 	// sw
 						c_store = 1;
@@ -253,6 +254,13 @@ module decode(input clk, input reset,
 						c_rs2 = {1'b1, ins[4:2]};
 						c_imm = {{(RV-6){1'b0}}, ins[2], ins[12], ins[4:3], ins[6:5]};
 						c_needs_rs2 = ins[12]; c_trap = !ins[12]?ins[2]:(ins[6:5]!=0);
+					end
+			3'b001:	begin	// addi (rx)
+						c_op = `OP_ADD;
+						c_rs1 = {1'b0, ins[9:7]};
+						c_rd = {1'b0, ins[9:7]};
+						c_imm = {{(RV-7){ins[4]}}, ins[3:2],  ins[12:10], ins[6:5]};
+						c_trap = !supmode && (c_rd >= 4'b0011 && c_rd <= 4'b0110);
 					end
 			3'b010:	begin	// lwsp  **
 						c_load = 1;
@@ -443,8 +451,7 @@ module decode(input clk, input reset,
 						c_rs2 = 0;
 						c_rs1 = {1'b1, ins[9:7]};
 						c_imm = 0;
-						c_trap = ins[11:10] != 0 || ins[6:2] != 0 ;// other encodings availa
-						c_trap = !supmode;
+						c_trap = !supmode ||  ins[12:10] != 0 || ins[6:2] != 0 ;// other encodings availa
 					end
 			3'b11?:	begin	//  bltz/bgez
 						c_br = 1;
