@@ -46,11 +46,18 @@ module spi(input clk, input reset,
 	
 		for (I = 0; I < 3; I = I+1) begin
 			always @(posedge clk)
+			if (reset) begin
+				r_mode[I] <= 0;
+				r_src[I] <= 0;
+			end else
 			if (reg_write && reg_sel == I && reg_addr == 4) begin
 				r_mode[I] <= reg_data_in[1:0];
 				r_src[I] <= reg_data_in[2];
 			end
 			always @(posedge clk)
+			if (reset) begin
+				r_clk_count[I] <= 0;
+			end else
 			if (reg_write && reg_sel == I && reg_addr == 5) begin
 				r_clk_count[I] <= reg_data_in;
 			end
@@ -116,6 +123,7 @@ module spi(input clk, input reset,
 		r_interrupt <= 0;
 		r_bits <= 7;
 		r_searching <= 0;
+		r_count <= 0;
 	end else
 	case (r_state)
 	0:	begin
